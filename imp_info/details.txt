@@ -1,0 +1,38 @@
+1. The web browser creates a socket using the API provided by the OS. We can describe the socket with a more
+specific prefix: a client socket. For the server to process client requests, the computer
+running the web server must listen for incoming connections; that is, the server application
+creates a server socket intended to listen to connections
+
+2. A socket is an abstraction over network communication. We treat them as regular files – everything written to a socket is sent via the network to its
+destination by the operating system. Everything that is received via the network is written
+into the socket – again, by the operating system. This way, the OS provides two-way
+communication for network applications.
+
+3. TCP first establishes a connection between two endpoints. The client sends a SYN request to the server. The server answers with the
+SYN-ACK response, letting the client know that it's fine to continue the handshake. Finally,
+the client answers with an ACK to the server stating the connection is officially established.
+They can communicate as long as they want.
+
+4. UDP doesn't work this way. It sends data to the destination without worrying about an
+established connection. If you use UDP but need some reliability, you should implement it
+by yourself; for example, by checking whether a portion of data reached the destination.
+
+5. We are implementing a TCP server
+
+6. The following are the main tasks of the server:
+        i) Receive files from client applications
+        ii) Store files at specified locations
+        iii) Send files to clients upon request
+
+7. So, therefore we are going to have three entity: Store Manager, Client Manager, Networking
+
+i) The Storage Manager handles everything related to storing and retrieving files.
+
+ii) The Client Manager is a class or a group of classes that represent handling everything
+related to authenticating or authorizing clients (by client, we mean a client application),
+keeping steady connections with clients, receiving files from clients, sending files to clients, and so on
+
+iii) Everything that relates to a network connection, along with data transfers from and to clients, is
+handled via Networking
+
+
