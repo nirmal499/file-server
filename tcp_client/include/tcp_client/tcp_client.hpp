@@ -23,6 +23,8 @@ namespace client
     public:
         explicit myclient(uint16_t port = PORT);
         void echo();
+        void start(const char *file);
+        tuple<string, vector<string>> parse(const string &config_file);
         ~myclient();
     };
 
