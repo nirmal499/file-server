@@ -1,4 +1,4 @@
-#include "../include/my_base/base.hpp"
+#include <my_base/base.hpp>
 #include <algorithm>
 #include <fstream>
 
@@ -162,4 +162,34 @@ size_t base_utility::recvFile(const int &fd, const string &absolute_fileName){
     outfile.close();  
 
     return fileSize;
+}
+
+std::string base_utility::generate_uuid(){
+    // https://stackoverflow.com/questions/51053568/generating-a-random-uuid-in-c
+    uuid_t bin_uuid;
+    /*
+     * Generate a UUID. We're not done yet, though,
+     * for the UUID generated is in binary format 
+     * (hence the variable name). We must 'unparse' 
+     * binuuid to get a usable 36-character string.
+     */
+
+    // Under the hood the uuid_t is char[]
+    uuid_generate_random(bin_uuid);
+
+    /*
+     * uuid_unparse() doesn't allocate memory for itself, so do that with
+     * malloc(). 37 is the length of a UUID (36 characters), plus '\0'.
+     */
+    std::unique_ptr<std::array<char,37>> str_uuid = std::make_unique<std::array<char,37>>();
+    if(str_uuid == nullptr){
+        throw std::runtime_error("Error in allocating in heap make_unique..\n");
+    }
+
+    /* Produces a UUID string at uuid consisting of lower-case letters. */
+    // Since str_uuid.get() gives a raw pointer so, thats why we need to use '->' instead of '.'
+    uuid_unparse_lower(bin_uuid, str_uuid.get()->data());
+
+    std::string my_str_uuid(str_uuid.get()->data());
+    return my_str_uuid;
 }

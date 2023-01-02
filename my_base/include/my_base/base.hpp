@@ -4,7 +4,9 @@
 #include <unistd.h> /* For the `close()` in the tcp_server.cpp */
 #include <tuple>
 #include <string.h>
-#include <variant>
+// #include <stduuid/uuid.h>
+#include <uuid/uuid.h>
+#include <memory>
 
 /* MY_BUFF_SIZE is 4*1024 indicating 4KB used in recvBuffer and sendBuffer */
 /* MY_FILE_BUFF_SIZE is 64*1024 indicating 64KB used in sendFile and recvFile*/
@@ -28,6 +30,9 @@ namespace base_utility
 
         }
     }
+    
+
+    string generate_uuid();
 
     void my_write(const int &fd,const uint8_t buffer[],const size_t &bufferSize);
     size_t my_read(const int &fd,uint8_t buffer[],const size_t &bufferSize);
