@@ -1,5 +1,6 @@
 #include "../include/my_base/base.hpp"
 #include <algorithm>
+#include <fstream>
 
 /**
  *  Writes data to fd from buffer until bufferSize value is met
@@ -65,22 +66,100 @@ std::tuple<size_t,size_t> base_utility::read_UInt(const int &fd){
     return std::make_tuple(bytes_read,data);
 }
 
-std::tuple<size_t,std::array<uint8_t,STR_MAX_SIZE>> base_utility::read_String(const int &fd,const size_t &length){
+std::tuple<size_t,std::array<uint8_t,STR_MAX_SIZE>> base_utility::read_String(const int &fd){
     
     // The length will not be including the null terminator
     std::array<uint8_t,STR_MAX_SIZE> buffer_for_string{};
 
+    auto [bytes_read1,length_of_string_as_data] = base_utility::read_UInt(fd);
+    if(bytes_read1 == 0){
+        // here buffer_for_string is empty
+        return std::make_tuple(bytes_read1,buffer_for_string);
+    }
+
     // string.size() -> Returns the number of characters in the string, not including any null-termination.
-    auto bytes_read = base_utility::my_read(fd,buffer_for_string.data(),length);
+    auto bytes_read2 = base_utility::my_read(fd,buffer_for_string.data(),length_of_string_as_data);
+    if(bytes_read2 == 0){
+        // here buffer_for_string is empty
+        return std::make_tuple(bytes_read2,buffer_for_string);
+    }
 
     // Max string content length can be 255{0-254} and last{255} is for null terminator
-    if(length >= STR_MAX_SIZE-1){
+    if(length_of_string_as_data >= STR_MAX_SIZE-1){
         // In this block length is either 255 or more than 255
         buffer_for_string.data()[STR_MAX_SIZE-1] = '\0';
     }else{
         // In this block length is less than 255. It might can be 254 also
-        buffer_for_string.data()[length+1] = '\0';
+        buffer_for_string.data()[length_of_string_as_data+1] = '\0';
+    }
+    /**
+     * bytes_read1, bytes_read2 and length_of_string_as_data all will be same
+    */
+    return std::make_tuple(bytes_read2,buffer_for_string);
+}
+
+size_t base_utility::sendFile(const int &fd, const string &fileName){
+    
+    std::array<uint8_t,MY_BUFF_SIZE> buffer;
+
+    ifstream uploadfile(fileName,ios_base::binary);
+
+    if(!uploadfile.is_open()){
+        return 0;
     }
 
-    return std::make_tuple(bytes_read,buffer_for_string);
+    uploadfile.seekg(0,ios_base::end);
+    size_t fileSize = uploadfile.tellg();
+    uploadfile.seekg(0,ios_base::beg);
+
+    base_utility::write_UInt(fd,fileSize);
+
+    size_t total_bytes_to_be_send = fileSize;
+
+    while(total_bytes_to_be_send != 0){
+        size_t to_read_bytes = min(total_bytes_to_be_send,static_cast<size_t>(MY_BUFF_SIZE));
+
+        if(!uploadfile.read(reinterpret_cast<char *>(buffer.data()),to_read_bytes)){
+            return 0;
+        }
+
+        base_utility::my_write(fd,buffer.data(),to_read_bytes);
+
+        total_bytes_to_be_send -= to_read_bytes;
+    }
+
+    uploadfile.close();  
+
+    return fileSize;
+}
+
+size_t base_utility::recvFile(const int &fd, const string &absolute_fileName){
+    std::array<uint8_t,MY_BUFF_SIZE> buffer;
+
+    ofstream outfile(absolute_fileName, ios_base::binary);
+
+    if(!outfile.is_open()){
+        return 0;
+    }
+
+    auto [bytes_read,fileSize] = base_utility::read_UInt(fd);
+    if(bytes_read == 0){
+        return 0;
+    }
+
+    size_t total_bytes_to_be_read = fileSize;
+
+    while(total_bytes_to_be_read != 0){
+        size_t to_write_bytes = base_utility::my_read(fd,buffer.data(),min(static_cast<size_t>(MY_BUFF_SIZE), total_bytes_to_be_read));
+
+        if(to_write_bytes == 0 || !outfile.write(reinterpret_cast<char *>(buffer.data()),to_write_bytes)){
+            return 0;
+        }
+
+        total_bytes_to_be_read -= to_write_bytes;
+    }
+
+    outfile.close();  
+
+    return fileSize;
 }
