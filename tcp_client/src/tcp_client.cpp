@@ -39,7 +39,9 @@ namespace client
         base_utility::write_String(m_fd,parsed_string);
 
         cout << "str is : " << parsed_string << '\n';
-
+        
+        // tuple<"old_file_name","new_file_name_from_server"> 
+        std::vector<std::tuple<std::string,std::string>> new_file_name_details_vec;
         int unsuccessful_upload_count = 0;
         for(auto &file: files_vec){
             /**Here we will be sending file*/
@@ -48,11 +50,21 @@ namespace client
             if(fileSize_written == 0){
                 cout << "Some errored during sending/writing/uploading file " << file << " as the sent fileSize is 0\n";
                 unsuccessful_upload_count++;
+            }else{
+                auto [bytes_read,new_file_name_from_server_arr_of_uint8] = base_utility::read_String(m_fd);
+                string new_file_name_from_server(reinterpret_cast<char*>(new_file_name_from_server_arr_of_uint8.data()));
+                
+                new_file_name_details_vec.emplace_back(std::make_tuple(std::move(file),std::move(new_file_name_from_server)));
             }
         }
 
         cout << "\nRESULTS: \n1. NO.OF UPLOADED FILES : " << files_vec.size() - unsuccessful_upload_count;
         cout << "\n2. NO.OF UNSUCCESSFUL UPLOADS : " << unsuccessful_upload_count << "\n";
+
+        cout << "\nNEW FILE NAME DETAILS\n";
+        for(auto &file_name_tuple:new_file_name_details_vec){
+            cout << get<0>(file_name_tuple) << " ---> " << get<1>(file_name_tuple) << "\n";
+        }
 
     }
 
