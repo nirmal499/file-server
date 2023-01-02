@@ -298,6 +298,8 @@ namespace server
             if(fileSize_read == 0){
                 cout << "Some errored during receving/reading/downloading file " << file << " as the sent fileSize is 0\n";
                 unsuccessful_download_count++;
+            }else{
+                base_utility::write_String(fd,file);
             }
 
         }
@@ -338,8 +340,10 @@ namespace server
             // temp contains: 'os-dev.pdf'
             temp = s.substr(pos_of_hash + 1);
 
-            FPTable[temp] = move(temp_permitted_users_vec);
-            vec_used_as_a_helper_for_FPTable.push_back(move(temp));
+            string my_uuid = base_utility::generate_uuid();
+            string new_file_name_with_uuid = my_uuid + '-' + temp;
+            FPTable[new_file_name_with_uuid] = move(temp_permitted_users_vec);
+            vec_used_as_a_helper_for_FPTable.push_back(move(new_file_name_with_uuid));
         }
 
         return make_tuple(move(part1),move(vec_used_as_a_helper_for_FPTable),move(FPTable));
