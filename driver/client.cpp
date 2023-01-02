@@ -5,9 +5,16 @@
 int main(int argc, char **argv)
 {
     try
-    {
+    {   
+        if (argc < 2)
+        {
+            std::cout << "Please provide the config file!!!!\n";
+            return EXIT_FAILURE;
+        }
+
         client::myclient client{PORT};
-        client.echo();
+        client.start(argv[1]);
+        // client.echo();
 
         return EXIT_SUCCESS;
     }
