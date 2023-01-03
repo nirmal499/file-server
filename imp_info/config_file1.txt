@@ -1,0 +1,4 @@
+operation: 1
+username: user0
+user1;user2,/home/nbaskey/Downloads/provision_Certificate.pdf
+user1;user2,/home/nbaskey/Downloads/pexels-alesia-kozik-6004828.jpg
