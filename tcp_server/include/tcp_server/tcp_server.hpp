@@ -25,8 +25,8 @@ namespace server
 
         int bind();
         int task(const int &m_client);
-        tuple<string, vector<string>, unordered_map<string, vector<string>>> parse(const string &str);
-        vector<string> split(const string &str, char delim);
+        tuple<string, vector<string>, unordered_map<string, string>> parse_for_uploading(const string &str);
+        tuple<string,vector<string>> parse_for_downloading(const string &str);
         int handle_connection(const int &fd);
 
     public:
