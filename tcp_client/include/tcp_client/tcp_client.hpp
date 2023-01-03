@@ -24,7 +24,7 @@ namespace client
         explicit myclient(uint16_t port = PORT);
         void echo();
         void start(const char *file);
-        tuple<string, vector<string>> parse(const string &config_file);
+        tuple<string, vector<string>> parse_for_both_uploading_and_downloading(const string &config_file);
         ~myclient();
     };
 
