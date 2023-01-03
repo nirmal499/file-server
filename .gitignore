@@ -16,6 +16,8 @@ try1/
 resources/
 confidential_files/
 
+.vscode
+
 # Prerequisites
 *.d
 
