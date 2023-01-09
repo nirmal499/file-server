@@ -10,7 +10,7 @@
 #include <string>
 #include <vector>
 #include <sstream>
-#include<unordered_map>
+#include <unordered_map>
 
 /* MY_BUFF_SIZE is 4*1024 indicating 4KB used in recvBuffer and sendBuffer */
 /* MY_FILE_BUFF_SIZE is 64*1024 indicating 64KB used in sendFile and recvFile*/
@@ -22,6 +22,8 @@
 #define CONFIDENTIAL_FILE "/home/nbaskey/Desktop/cpp_projects/cpp_file_server/confidential_files/db_file.txt"
 #define SERVER_STORAGE_FOLDER "/home/nbaskey/Desktop/cpp_projects/cpp_file_server/resources/server/"
 #define CLIENT_STORAGE_FOLDER "/home/nbaskey/Desktop/cpp_projects/cpp_file_server/resources/client/"
+
+#define SERVER_TYPE 0
 
 namespace base_utility
 {
