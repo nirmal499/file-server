@@ -23,6 +23,7 @@ namespace client
     public:
         explicit myclient(uint16_t port = PORT);
         void echo();
+        void echo_for_multithreaded_server();
         void start(const char *file);
         tuple<string, vector<string>> parse_for_both_uploading_and_downloading(const string &config_file);
         ~myclient();

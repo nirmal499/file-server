@@ -234,4 +234,22 @@ namespace client
         }
     }
 
+    void myclient::echo_for_multithreaded_server()
+    {
+        string sendbuf{};
+
+        // cin >> sendbuf;
+        getline(cin, sendbuf);
+
+        base_utility::write_String(m_fd, sendbuf);
+        auto [bytes_read, my_str] = base_utility::read_String(m_fd);
+
+        if (bytes_read == 0)
+        {
+            cout << "Some error occurred during read\n";
+        }
+        cout << my_str.data() << "\n";
+    }
+    
+
 }
