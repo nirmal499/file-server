@@ -1,10 +1,10 @@
 #pragma once
 
-#include<netinet/in.h>
-#include<array>
-#include<unordered_map>
-#include<string>
-#include<vector>
+#include <netinet/in.h>
+#include <array>
+#include <unordered_map>
+#include <string>
+#include <vector>
 
 #define PORT 8080
 #define MAX_SIZE 256
@@ -24,9 +24,8 @@ namespace server
         struct sockaddr_in m_addr;
 
         int bind();
-        int task(const int &m_client);
         tuple<string, vector<string>, unordered_map<string, string>> parse_for_uploading(const string &str);
-        tuple<string,vector<string>> parse_for_downloading(const string &str);
+        tuple<string, vector<string>> parse_for_downloading(const string &str);
         int handle_connection(const int &fd);
 
     public:
@@ -37,7 +36,8 @@ namespace server
         void start_DONE_BY_SELECT();
         void start_DONE_BY_POLL();
         void start_DONE_BY_EPOLL();
-
+        void start_for_multi_threaded_file_server();
     };
+
 
 }

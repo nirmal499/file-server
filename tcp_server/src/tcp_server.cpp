@@ -1,6 +1,5 @@
 #include <tcp_server/tcp_server.hpp>
 #include <string.h>
-#include <my_base/base.hpp>
 #include <iostream>
 #include <cstdlib>
 #include <fstream>
@@ -9,10 +8,38 @@
 #include <memory>
 #include <sys/epoll.h>
 #include <vector>
+#include <thread_pool/pool.hpp>
+#include <my_base/base.hpp>
+
 
 namespace server
 {
     using namespace std;
+
+    // This function is available in this cpp file only.
+    // Returns 0 if during any read inside this function returns 0 bytes
+    int task(int m_client)
+    {
+
+        auto [bytes_read, my_str] = base_utility::read_String(m_client);
+        if (bytes_read == 0)
+        {
+            return 0;
+        }
+        cout << bytes_read << "<->" << my_str.data() << "\n";
+        string to_pass_my_str(reinterpret_cast<char *>(my_str.data()));
+
+        // For testing the thread_pool
+        // int i = 0;
+        // while(i <= 10){
+        //     sleep(2);
+        //     ++i;
+        // }
+
+        base_utility::write_String(m_client, to_pass_my_str);
+
+        return 999;
+    }
 
     myserver::myserver(uint16_t port)
     {
@@ -30,29 +57,14 @@ namespace server
         return ::bind(m_fd, reinterpret_cast<struct sockaddr *>(&m_addr), sizeof(m_addr));
     }
 
-    // Returns 0 if during any read inside this function returns 0 bytes
-    int myserver::task(const int &m_client)
-    {
-
-        auto [bytes_read, my_str] = base_utility::read_String(m_client);
-        if (bytes_read == 0)
-        {
-            return 0;
-        }
-        cout << bytes_read << "<->" << my_str.data() << "\n";
-        string to_pass_my_str(reinterpret_cast<char *>(my_str.data()));
-        base_utility::write_String(m_client, to_pass_my_str);
-
-        return 999;
-    }
-
     void myserver::start_for_echo()
     {
+        cout << "ECHO sever is started single connection........: \n";
         base_utility::CHECK(::listen(m_fd, MAX_CONN), "Error in listen");
         base_utility::CHECK(m_client = ::accept(m_fd, nullptr, nullptr), "Error in accept");
 
         while (true)
-        {
+        {   
             if (int ret = task(m_client); ret == 0)
             {
                 break;
@@ -64,6 +76,7 @@ namespace server
 
     void myserver::start_for_file_server()
     {
+        cout << "File sever is started single connection........: \n";
         base_utility::CHECK(::listen(m_fd, MAX_CONN), "Error in listen");
         base_utility::CHECK(m_client = ::accept(m_fd, nullptr, nullptr), "Error in accept");
 
@@ -80,9 +93,30 @@ namespace server
         close(m_client);
     }
 
+    void myserver::start_for_multi_threaded_file_server()
+    {
+        // We want two threads in out thread pool
+        my_pool::thread_pool tp{2}; // It means there will be three instances of ./server becoz
+        // 1 is main thread, and other 2 are the working thread
+
+        cout << "Multi Threaded File ECHO server is started.......: \n";
+        // we tell the API to use the default connection backlog, which is implementation-specific, by setting the backlog to 0
+        base_utility::CHECK(::listen(m_fd, -1), "Error in listen");
+
+        while (true)
+        {
+            base_utility::CHECK(m_client = ::accept(m_fd, nullptr, nullptr), "Error in accept");
+            auto my_tuple = make_tuple(task, m_client);
+            tp.do_task(my_tuple);
+        }
+    }
+
     void myserver::start_DONE_BY_SELECT()
     {
+        cout << "Echo Server is started HANDLED BY SELECT.......: \n";
+
         base_utility::CHECK(::listen(m_fd, MAX_CONN), "Error in listen");
+        
 
         fd_set master;
         FD_ZERO(&master);
@@ -98,7 +132,7 @@ namespace server
         {
             fd_set copy = master;
 
-            int ret = select(fdMax + 1, &copy, nullptr, nullptr, &tv);
+            int ret = select(fdMax + 1, &copy, nullptr, nullptr, nullptr);
             base_utility::CHECK(ret, "Error in select syscall..");
 
             if (ret == 0)
@@ -142,6 +176,8 @@ namespace server
 
     void myserver::start_DONE_BY_POLL()
     {
+        cout << "Echo Server is started HANDLED BY POLL.......: \n";
+
         base_utility::CHECK(::listen(m_fd, MAX_CONN), "Error in listen");
         // base_utility::CHECK(m_client = ::accept(m_fd, nullptr, nullptr), "Error in accept");
 
@@ -167,7 +203,7 @@ namespace server
 
         while (true)
         {
-            // -1 indicates that our timeout is infinite
+            // -1 indicates that our timeout is infinite. It means it will wait forever, until of the descriptor is ready to read
             ndfs = num_fds;
             base_utility::CHECK(poll(pollfds.get(), ndfs, -1), "Error in poll syscall.....");
 
@@ -234,6 +270,8 @@ namespace server
 
     void myserver::start_DONE_BY_EPOLL()
     {
+        cout << "Echo Server is started HANDLED BY EPOLL.......: \n";
+
         base_utility::CHECK(::listen(m_fd, MAX_CONN), "Error in listen");
         // base_utility::CHECK(m_client = ::accept(m_fd, nullptr, nullptr), "Error in accept");
 
@@ -250,6 +288,7 @@ namespace server
         base_utility::CHECK(epoll_ctl(efd, EPOLL_CTL_ADD, m_fd, &ev), "Error in epoll_ctl ....\n");
 
         int no_fds = 0;
+
         while (true)
         {
             base_utility::CHECK(no_fds = epoll_wait(efd, ep_events.data(), MAX_CONN, -1), "Error in epoll_wait...\n");
@@ -411,7 +450,7 @@ namespace server
     {
         /* 2@user0$aaf53441-e1d2-41a3-a2c9-0287c3b068ea-os-dev.pdf&3eb2b3d9-4e5f-4c62-853d-d0ba62b8a3cb-sish.1.pdf */
         size_t pos_of_dollar = str.find_first_of('$');
-        string part1 = str.substr(0,pos_of_dollar);
+        string part1 = str.substr(0, pos_of_dollar);
 
         string user_name_of_downloader = part1.substr(2);
 
@@ -425,16 +464,16 @@ namespace server
 
         size_t pos_of_dollar = str.find_first_of('$');
         /* 1@user0$user1;user2#os-dev.pdf&user3;user4#sish.1.pdf */
-        string part1 = str.substr(0,pos_of_dollar);
+        string part1 = str.substr(0, pos_of_dollar);
         // 2nd argument passed to substr is the no.of characters you want to extract
 
         string user_name_of_uploader = part1.substr(2);
-        // cout << "user_name_of_uploader : " << user_name_of_uploader << "\n"; 
+        // cout << "user_name_of_uploader : " << user_name_of_uploader << "\n";
 
         // works_vec will contain : ['user1;user2#os-dev.pdf','user3;user4#sish.1.pdf']
         vector<string> works_vec = base_utility::split(str.substr(pos_of_dollar + 1), '&');
         for (auto &item : works_vec)
-        {   
+        {
             // cout << "Previous : " << item << "\n";
             item = user_name_of_uploader + ';' + item;
             // cout << "After : " << item << "\n\n";
@@ -477,5 +516,4 @@ namespace server
 
         return make_tuple(move(user_name_of_uploader), move(vec_used_as_a_helper_for_FPTable), move(FPTable));
     }
-
 }
