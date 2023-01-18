@@ -3,7 +3,9 @@
 #include <fstream>
 #include <mutex>
 
+#if SERVER_TYPE == 1
 static std::mutex db_gaurd;
+#endif
 
 /**
  *  Writes data to fd from buffer until bufferSize value is met
@@ -252,7 +254,9 @@ int base_utility::is_permitted(const string &file_name,const string &user_name){
 
 void base_utility::write_to_db(const std::string &key,const std::string &value){
 
+#if SERVER_TYPE == 1
     std::unique_lock gaurd(db_gaurd); // It is RAII
+#endif
     /***START OF CRITICAL SECTION******/
     ofstream outfile(CONFIDENTIAL_FILE,ios_base::app);
 
