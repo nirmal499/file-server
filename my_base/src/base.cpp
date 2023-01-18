@@ -1,6 +1,9 @@
 #include <my_base/base.hpp>
 #include <algorithm>
 #include <fstream>
+#include <mutex>
+
+static std::mutex db_gaurd;
 
 /**
  *  Writes data to fd from buffer until bufferSize value is met
@@ -248,6 +251,9 @@ int base_utility::is_permitted(const string &file_name,const string &user_name){
 }
 
 void base_utility::write_to_db(const std::string &key,const std::string &value){
+
+    std::unique_lock gaurd(db_gaurd); // It is RAII
+    /***START OF CRITICAL SECTION******/
     ofstream outfile(CONFIDENTIAL_FILE,ios_base::app);
 
     if(!outfile.is_open()){
@@ -256,6 +262,9 @@ void base_utility::write_to_db(const std::string &key,const std::string &value){
 
     string line_to_append = key + "<====>" + value + '\n';
     outfile.write(line_to_append.data(),line_to_append.size());
+
+    outfile.close();
+    /***END OF CRITICAL SECTION******/
 }
 
 
