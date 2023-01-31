@@ -49,4 +49,4 @@ A compile definition 'NTHREADS' is used to specify the no.of threads for the thr
     + `$ ./run.sh -o "run_client" `
 
 
-##### A lot of changes will be made in this project
+#### A lot of changes will happen in the project in the future
