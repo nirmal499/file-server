@@ -11,6 +11,7 @@
 #include <thread_pool/pool.hpp>
 #include <my_base/base.hpp>
 
+#define NO_OF_THREADS 2
 
 namespace server
 {
@@ -96,7 +97,7 @@ namespace server
     void myserver::start_for_multi_threaded_file_server()
     {
         // We want two threads in out thread pool
-        my_pool::thread_pool tp{2}; // It means there will be three instances of ./server becoz
+        my_pool::thread_pool tp{NO_OF_THREADS}; // It means there will be three instances of ./server becoz
         // 1 is main thread, and other 2 are the working thread
 
         cout << "Multi Threaded File ECHO server is started.......: \n";
