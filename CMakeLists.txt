@@ -4,15 +4,21 @@ project(file_server LANGUAGES CXX)
 
 set(CMAKE_CXX_STANDARD 17)
 
-# 0 :- Nothing
-# 1 :- echo server single connection
-# 2 :- file server single connection
-# 3 :- multi threaded file echo server
-# 4 :- echo server handled by select
-# 5 :- echo server handled by poll
-# 6 :- echo server handled by epoll
+# SERVER_TYPE-> 0 :- Nothing [DEFAULT]
+# SERVER_TYPE-> 1 :- echo server single connection
+# SERVER_TYPE-> 2 :- file server single connection
+# SERVER_TYPE-> 3 :- multi threaded file echo server
+# SERVER_TYPE-> 4 :- echo server handled by select
+# SERVER_TYPE-> 5 :- echo server handled by poll
+# SERVER_TYPE-> 6 :- echo server handled by epoll
 
-add_compile_definitions(SERVER_TYPE=3)
+if(DEFINED SERVERT)
+    add_compile_definitions(SERVER_TYPE=${SERVERT})
+    # message(STATUS "SERVERT=${SERVERT}")
+endif()
+unset(SERVERT CACHE)
+
+# message(STATUS ${SERVERT})
 
 add_subdirectory(my_base)
 add_subdirectory(my_pool)
