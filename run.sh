@@ -30,6 +30,25 @@ else
         echo "ERROR: -s flag is Not a number" >&2; exit 1
     fi
 
+    if [ ${servert} -eq 2 ] || [ ${servert} -eq 3 ]; then
+        curr_dir=`pwd`
+        # echo "CURR_DIR: '${curr_dir}'"
+        confidential_file_path="${curr_dir}/confidential_files"
+        mkdir -p confidential_file_path
+
+        confidential_file_path="${curr_dir}/confidential_files/db_file.txt"
+        test -f confidential_file_path || touch confidential_file_path
+
+        server_storage_path="${curr_dir}/resources/server/"
+        client_storage_path="${curr_dir}/resources/client/"
+
+        mkdir -p server_storage_path
+        mkdir -p client_storage_path
+
+        file_paths_flag="-DDBFILE='${confidential_file_path}' -DSERVERPATH='${server_storage_path}' -DCLIENTPATH='${client_storage_path}'"
+ 
+    fi
+
     if [ ${servert} -eq 3 ]; then
         if [ -z "${nthread}" ]; then
             usage
@@ -43,7 +62,9 @@ else
             echo "ERROR: max 8 threads allowed" >&2; exit 1
         fi
 
-        cmake -S . -B build/ -DSERVERT=${servert} -DNTHREADS=${nthread}
+        cmake -S . -B build/ -DSERVERT=${servert} -DNTHREADS=${nthread} ${file_paths_flag}
+    elif [ ${servert} -eq 3 ]; then
+        cmake -S . -B build/ -DSERVERT=${servert} ${file_paths_flag}
     else
         cmake -S . -B build/ -DSERVERT=${servert}
     fi
