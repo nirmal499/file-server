@@ -15,6 +15,9 @@ A compile definiton 'SERVERT' is used to compile specific server
 
 A compile definition 'NTHREADS' is used to specify the no.of threads for the threadpool only when you choose the 'SERVERT' as 3
 
+### Dependencies
+$ sudo apt install uuid-dev
+
 ### To compile:
 
 1. Echo Server ability to handle only single client at a time
