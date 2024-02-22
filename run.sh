@@ -30,7 +30,7 @@ else
         echo "ERROR: -s flag is Not a number" >&2; exit 1
     fi
 
-    if [ ${servert} -eq 2 ] || [ ${servert} -eq 3 ]; then
+    if [ ${servert} -eq 2 ] || [ ${servert} -eq 7 ] || [ ${servert} -eq 8 ] || [ ${servert} -eq 9 ]; then
         curr_dir=`pwd`
         # echo "CURR_DIR: '${curr_dir}'"
         confidential_file_path="${curr_dir}/confidential_files"

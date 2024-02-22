@@ -12,6 +12,9 @@ A compile definiton 'SERVERT' is used to compile specific server
 | Echo Server ability to handle multiple clients using select() syscall  | 4  |
 | Echo Server ability to handle multiple clients using poll() syscall  | 5  |
 | Echo Server ability to handle multiple clients using epoll() syscall  | 6  |
+| File Server ability to handle multiple clients using select() syscall  | 7  |
+| File Server ability to handle multiple clients using poll() syscall  | 8  |
+| File Server ability to handle multiple clients using epoll() syscall  | 9 |
 
 A compile definition 'NTHREADS' is used to specify the no.of threads for the threadpool only when you choose the 'SERVERT' as 3
 
@@ -27,7 +30,7 @@ $ sudo apt install uuid-dev
     + `./run.sh -o "configure" -s 2`
 
 3. Multi Threaded Echo Server ability to handle upto NTHREADS clients
-    + `./run.sh -o "configure" -s 1 -t 2`
+    + `./run.sh -o "configure" -s 3 -t 2`
     + -t flag is used to specify the no.of threads to initialize the threadpool
 
 4. Echo Server ability to handle multiple clients using select() syscall
@@ -38,6 +41,15 @@ $ sudo apt install uuid-dev
 
 6. Echo Server ability to handle multiple clients using epoll() syscall
     + `./run.sh -o "configure" -s 6`
+
+7. File Server ability to handle multiple clients using select() syscall
+    + `./run.sh -o "configure" -s 7`
+
+8. File Server ability to handle multiple clients using poll() syscall
+    + `./run.sh -o "configure" -s 8`
+
+9. File Server ability to handle multiple clients using epoll() syscall
+    + `./run.sh -o "configure" -s 9`
 
 ### To build:
 
