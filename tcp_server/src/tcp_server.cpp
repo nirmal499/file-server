@@ -94,13 +94,247 @@ namespace server
         close(m_client);
     }
 
-    void myserver::start_for_multi_threaded_file_server()
+
+    // void myserver::start_for_multi_threaded_file_server()
+    // {
+    //     // We want two threads in out thread pool
+    //     my_pool::thread_pool tp{NO_OF_THREADS}; // It means there will be three instances of ./server becoz
+    //     // 1 is main thread, and other 2 are the working thread
+
+    //     cout << "Multi Threaded file server is started.......: \n";
+    //     // we tell the API to use the default connection backlog, which is implementation-specific, by setting the backlog to 0
+    //     base_utility::CHECK(::listen(m_fd, -1), "Error in listen");
+
+    //     while (true)
+    //     {
+    //         base_utility::CHECK(m_client = ::accept(m_fd, nullptr, nullptr), "Error in accept");
+    //         auto my_tuple = make_tuple(handle_connection, m_client);
+    //         tp.do_task(my_tuple);
+    //     }
+    // }
+
+    void myserver::start_file_server_DONE_BY_SELECT()
+    {
+        cout << "File Server is started HANDLED BY SELECT.......: \n";
+
+        base_utility::CHECK(::listen(m_fd, MAX_CONN), "Error in listen");
+        
+
+        fd_set master;
+        FD_ZERO(&master);
+        FD_SET(m_fd, &master);
+
+        int fdMax = m_fd;
+
+        struct timeval tv = {
+            .tv_sec = 30,
+            .tv_usec = 0};
+
+        while (true)
+        {
+            fd_set copy = master;
+
+            int ret = select(fdMax + 1, &copy, nullptr, nullptr, nullptr);
+            base_utility::CHECK(ret, "Error in select syscall..");
+
+            if (ret == 0)
+            {
+                cout << "Waiting no client tried to connect ...\n";
+            }
+            else
+            {
+                for (int fd = 0; fd < (fdMax + 1); ++fd)
+                {
+                    if (FD_ISSET(fd, &copy))
+                    {
+                        if (fd == m_fd)
+                        {
+                            // request for new connection
+
+                            base_utility::CHECK(m_client = ::accept(m_fd, nullptr, nullptr), "Error in accept");
+                            FD_SET(m_client, &master);
+
+                            if (m_client > fdMax)
+                            {
+                                fdMax = m_client;
+                            }
+                        }
+                        else
+                        {
+                            // data from the connections, receive it
+
+                            if (int ret = handle_connection(fd); ret <= 0)
+                            {
+                                // returned 0 means fd closed the connection
+                                close(fd);
+                                FD_CLR(fd, &master);
+                            }
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    void myserver::start_file_server_DONE_BY_POLL()
+    {
+        cout << "File Server is started HANDLED BY POLL.......: \n";
+
+        base_utility::CHECK(::listen(m_fd, MAX_CONN), "Error in listen");
+        // base_utility::CHECK(m_client = ::accept(m_fd, nullptr, nullptr), "Error in accept");
+
+        unique_ptr<struct pollfd[]> pollfds{};
+
+        int maxFds = 0;
+
+        pollfds = make_unique<struct pollfd[]>(FIRST_NUM_FDS);
+        if (pollfds == nullptr)
+        {
+            throw runtime_error("Error in make_unique..\n");
+        }
+
+        int timeout = 30 * 1000; /** 30000 ms -> 30 sec*/
+        maxFds = FIRST_NUM_FDS;
+
+        pollfds[0] = {
+            .fd = m_fd,
+            .events = POLLIN,
+            .revents = 0};
+        int num_fds = 1;
+        int ndfs;
+
+        while (true)
+        {
+            // -1 indicates that our timeout is infinite. It means it will wait forever, until of the descriptor is ready to read
+            ndfs = num_fds;
+            base_utility::CHECK(poll(pollfds.get(), ndfs, -1), "Error in poll syscall.....");
+
+            for (int i = 0; i < ndfs; ++i)
+            {
+                if (pollfds[i].fd <= 0)
+                {
+                    /**
+                     * file descriptor = 0 is not expected, as these are socket fds not stdin
+                     */
+                    continue;
+                }
+
+                if ((pollfds[i].revents & POLLIN) == POLLIN)
+                {
+                    // fd is ready for reading
+
+                    if (pollfds[i].fd == m_fd)
+                    {
+                        // request for new connection
+                        base_utility::CHECK(m_client = ::accept(m_fd, nullptr, nullptr), "Error in accept");
+
+                        // add new fd to pollfds
+                        if (num_fds == maxFds)
+                        {
+                            // create space
+                            // https://stackoverflow.com/questions/68210877/why-is-there-no-realloc-equivalent-to-the-new-delete-family
+
+                            unique_ptr<struct pollfd[]> copy_pollfds = move(pollfds);
+                            pollfds = make_unique<struct pollfd[]>(maxFds + FIRST_NUM_FDS);
+                            if (pollfds == nullptr)
+                            {
+                                throw runtime_error("Error in make_unique....");
+                            }
+
+                            memcpy(pollfds.get(), copy_pollfds.get(), maxFds * sizeof(struct pollfd));
+                            maxFds += FIRST_NUM_FDS;
+                        }
+
+                        /**
+                         * Since I am incrementing num_fds here, I can't use it in for loop condition
+                         */
+                        num_fds++;
+                        pollfds[num_fds - 1] = {
+                            .fd = m_client,
+                            .events = POLLIN,
+                            .revents = 0};
+                    }
+                    else
+                    {
+                        // data from existing connection, recieve it
+                        // cout << "fd is : " << pollfds[i].fd << "\n";
+                        if (int ret = handle_connection(pollfds[i].fd); ret <= 0)
+                        {
+                            // returned 0 means fd closed the connection
+                            close(pollfds[i].fd);
+                            pollfds[i].fd *= -1; /* make it negative so it is ignored in the future*/
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+    void myserver::start_file_server_DONE_BY_EPOLL()
+    {
+        cout << "File Server is started HANDLED BY EPOLL.......: \n";
+
+        base_utility::CHECK(::listen(m_fd, MAX_CONN), "Error in listen");
+        // base_utility::CHECK(m_client = ::accept(m_fd, nullptr, nullptr), "Error in accept");
+
+        int timeout = 30 * 1000; /** 30000 ms -> 30 sec*/
+
+        int efd{};
+        base_utility::CHECK(efd = epoll_create1(0), "Error in epoll_create...\n");
+        struct epoll_event ev;
+        ev.data.fd = m_fd;
+        ev.events = EPOLLIN;
+
+        array<struct epoll_event, MAX_CONN> ep_events;
+
+        base_utility::CHECK(epoll_ctl(efd, EPOLL_CTL_ADD, m_fd, &ev), "Error in epoll_ctl ....\n");
+
+        int no_fds = 0;
+
+        while (true)
+        {
+            base_utility::CHECK(no_fds = epoll_wait(efd, ep_events.data(), MAX_CONN, -1), "Error in epoll_wait...\n");
+
+            for (int i = 0; i < no_fds; ++i)
+            {
+                if ((ep_events[i].events & EPOLLIN) == EPOLLIN)
+                {
+                    if (ep_events[i].data.fd == m_fd)
+                    {
+                        // request for new connection
+                        base_utility::CHECK(m_client = ::accept(m_fd, nullptr, nullptr), "Error in accept");
+
+                        ev.data.fd = m_client;
+                        ev.events = EPOLLIN;
+
+                        base_utility::CHECK(epoll_ctl(efd, EPOLL_CTL_ADD, m_client, &ev), "Error in epoll_ctl ....\n");
+                    }
+                    else
+                    {
+                        // data from an existing client
+                        if (int ret = handle_connection(ep_events[i].data.fd); ret <= 0)
+                        {
+                            // returned 0 means fd closed the connection
+
+                            // delete fd from epoll
+                            base_utility::CHECK(epoll_ctl(efd, EPOLL_CTL_DEL, ep_events[i].data.fd, &ev), "Error in epoll_ctl...\n");
+
+                            close(ep_events[i].data.fd);
+                        }
+                    }
+                }
+            }
+        }
+    }
+
+
+    void myserver::start_for_multi_threaded_echo_server()
     {
         // We want two threads in out thread pool
         my_pool::thread_pool tp{NO_OF_THREADS}; // It means there will be three instances of ./server becoz
         // 1 is main thread, and other 2 are the working thread
 
-        cout << "Multi Threaded File ECHO server is started.......: \n";
+        cout << "Multi Threaded ECHO server is started.......: \n";
         // we tell the API to use the default connection backlog, which is implementation-specific, by setting the backlog to 0
         base_utility::CHECK(::listen(m_fd, -1), "Error in listen");
 
@@ -325,6 +559,7 @@ namespace server
             }
         }
     }
+    
 
     myserver::~myserver()
     {

@@ -12,13 +12,19 @@ int main()
     #elif SERVER_TYPE == 2
             server.start_for_file_server();
     #elif SERVER_TYPE == 3
-            server.start_for_multi_threaded_file_server();
+            server.start_for_multi_threaded_echo_server();
     #elif SERVER_TYPE == 4
             server.start_DONE_BY_SELECT();
     #elif SERVER_TYPE == 5
             server.start_DONE_BY_POLL();
     #elif SERVER_TYPE == 6
             server.start_DONE_BY_EPOLL();
+    #elif SERVER_TYPE == 7
+            server.start_file_server_DONE_BY_SELECT();
+    #elif SERVER_TYPE == 8
+            server.start_file_server_DONE_BY_POLL();
+    #elif SERVER_TYPE == 9
+            server.start_file_server_DONE_BY_EPOLL();
     #endif
         return EXIT_SUCCESS;
     }
